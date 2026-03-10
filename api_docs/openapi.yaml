@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: Image to WebP Optimizer API
+  description: An API that downloads an image (up to 500MB) from a given URL, optimizes it into a lossless WEBP format while maintaining dimensions and quality, and returns the raw Base64 encoded string.
+  version: 1.0.0
+servers:
+  - url: https://<your-workspace>--image-to-webp-optimizer-optimize-image.modal.run
+    description: Modal Production Server
+paths:
+  /:
+    post:
+      summary: Optimize Image
+      description: Provide an image URL to download, optimize to WEBP, and receive as Base64 text.
+      operationId: optimize_image
+      requestBody:
+        description: The JSON payload containing the URL of the image to optimize.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageRequest'
+      responses:
+        '200':
+          description: Successfully optimized image. Returns a raw Base64 encoded string.
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Base64 encoded image string
+        '400':
+          description: Bad Request (e.g., image exceeds 500MB or download failed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+        '422':
+          description: Validation Error (e.g., missing or invalid URL parameter).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '500':
+          description: Internal Server Error (e.g., failed to process or encode the image).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+components:
+  schemas:
+    ImageRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          format: uri
+          title: URL
+          description: The absolute URL of the image to download.
+          example: "https://example.com/path/to/large-image.jpg"
+
+    HTTPError:
+      type: object
+      properties:
+        detail:
+          type: string
+          title: Detail
+          description: Human-readable error message.
+
+    HTTPValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+
+    ValidationError:
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      properties:
+        loc:
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
